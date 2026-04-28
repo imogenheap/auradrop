@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Auradrop">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Auradrop</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --surface2: #191919;
+    --border: #222222;
+    --border2: #2e2e2e;
+    --text: #e8e6e0;
+    --text2: #888880;
+    --text3: #444440;
+    --green: #1D9E75;
+    --green-dim: #0d3d2d;
+    --green-glow: rgba(29,158,117,0.15);
+    --amber: #c8962a;
+    --red: #c04040;
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative; z-index: 1;
+    width: 100%; max-width: 680px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 5rem;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 2.5rem;
+  }
+  .wordmark {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px; letter-spacing: -1px;
+  }
+  .wordmark span { color: var(--green); }
+
+  .header-right { display: flex; align-items: center; gap: 10px; }
+
+  .device-pill {
+    font-size: 10px; padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    letter-spacing: 0.05em;
+  }
+
+  .online-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    transition: background 0.3s;
+  }
+  .online-dot.offline { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+  /* ── Setup cards ── */
+  .setup-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 1rem;
+  }
+  .setup-label {
+    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text3); margin-bottom: 10px;
+  }
+  .setup-row { display: flex; gap: 8px; align-items: center; }
+
+  input[type=text], input[type=password] {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px; color: var(--text);
+    outline: none; width: 100%;
+  }
+  input:focus { border-color: var(--green); }
+  input::placeholder { color: var(--text3); }
+
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px; padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text2);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn:hover { border-color: var(--green); color: var(--green); }
+  .btn-green { background: var(--green); border-color: var(--green); color: #000; font-weight: 500; }
+  .btn-green:hover { background: #25c490; border-color: #25c490; color: #000; }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+  .btn-sm { font-size: 11px; padding: 7px 12px; }
+
+  .status-line {
+    font-size: 11px; margin-top: 8px;
+  }
+  .ok { color: var(--green); }
+  .err { color: var(--red); }
+  .warn { color: var(--amber); }
+
+  /* ── Drop zone ── */
+  .dropzone {
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 3.5rem 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--surface);
+    margin-bottom: 1rem;
+  }
+  .dropzone:hover, .dropzone.drag-over {
+    border-color: var(--green);
+    background: var(--green-dim);
+    box-shadow: 0 0 50px var(--green-glow);
+  }
+  .dropzone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .drop-circle {
+    width: 52px; height: 52px;
+    border: 1px solid var(--border2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1rem;
+    font-size: 20px;
+    transition: all 0.2s;
+  }
+  .dropzone:hover .drop-circle, .dropzone.drag-over .drop-circle {
+    border-color: var(--green);
+    box-shadow: 0 0 20px var(--green-glow);
+  }
+  .drop-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px; margin-bottom: 6px;
+  }
+  .drop-sub { font-size: 11px; color: var(--text3); letter-spacing: 0.06em; }
+
+  /* ── Analysis card ── */
+  .analysis-card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    animation: slideIn 0.2s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+  .card-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    background: var(--surface2);
+  }
+  .file-icon {
+    width: 34px; height: 34px;
+    border-radius: var(--radius-sm);
+    background: var(--green-dim);
+    border: 1px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .file-info { flex: 1; min-width: 0; }
+  .file-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .file-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+  .card-body { padding: 18px; }
+
+  /* Thinking */
+  .thinking {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px; color: var(--text2); padding: 10px 0;
+  }
+  .dot-pulse { display: flex; gap: 4px; }
+  .dot-pulse span {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.2s ease-in-out infinite;
+  }
+  .dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:.2;transform:scale(.8)} 40%{opacity:1;transform:scale(1)} }
+
+  /* Meta */
+  .meta-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-bottom: 12px;
+  }
+  .meta-cell {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 12px;
+  }
+  .meta-label { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 4px; }
+  .meta-value { font-size: 13px; color: var(--text); }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .tag {
+    font-size: 11px; padding: 3px 10px; border-radius: 999px;
+    background: var(--green-dim); color: var(--green);
+    border: 1px solid rgba(29,158,117,0.3);
+  }
+
+  .folder-path {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); margin-bottom: 14px;
+    font-size: 12px; color: var(--text2);
+  }
+  .folder-icon { color: var(--amber); }
+
+  .summary {
+    font-size: 13px; line-height: 1.7; color: var(--text2);
+    border-left: 2px solid var(--green);
+    padding: 10px 14px;
+    background: var(--bg);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    margin-bottom: 16px;
+  }
+
+  .action-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* Success */
+  .success-msg {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0; font-size: 13px; color: var(--green);
+  }
+  .success-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--green-dim); border: 1px solid var(--green);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0;
+  }
+
+  /* Error */
+  .error-box {
+    background: rgba(192,64,64,0.1); border: 1px solid rgba(192,64,64,0.3);
+    border-radius: var(--radius-sm); padding: 12px 14px;
+    font-size: 12px; color: var(--red); line-height: 1.6;
+  }
+
+  /* ── Offline queue banner ── */
+  .queue-banner {
+    background: var(--surface);
+    border: 1px solid var(--amber);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .queue-banner.visible { display: block; }
+  .queue-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .queue-title { font-size: 12px; color: var(--amber); }
+  .queue-list { display: flex; flex-direction: column; gap: 5px; }
+  .queue-item {
+    font-size: 11px; color: var(--text2);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .queue-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+
+  /* ── History ── */
+  .section-heading {
+    font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text3); margin-bottom: 10px;
+  }
+  .history-list { display: flex; flex-direction: column; gap: 6px; }
+  .history-item {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: 12px;
+  }
+  .hi-body { flex: 1; min-width: 0; }
+  .hi-name { color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+  .hi-sub { font-size: 11px; color: var(--text3); }
+  .hi-action { flex-shrink: 0; }
+  .hi-queued { font-size: 11px; color: var(--amber); }
+  .hi-filed { font-size: 11px; color: var(--green); }
+
+  /* ── Install banner ── */
+  .install-banner {
+    background: var(--green-dim);
+    border: 1px solid rgba(29,158,117,0.4);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: none; align-items: center; gap: 12px;
+    margin-bottom: 1rem;
+  }
+  .install-banner.visible { display: flex; }
+  .install-text { flex: 1; font-size: 12px; color: var(--text2); line-height: 1.6; }
+
+  /* ── Drive connect ── */
+  .drive-btn {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .drive-connected { font-size: 11px; color: var(--green); }
+
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="wordmark">Aura<span>drop</span></div>
+    <div class="header-right">
+      <div class="device-pill" id="device-pill">detecting…</div>
+      <div class="online-dot" id="online-dot"></div>
+    </div>
+  </header>
+
+  <!-- Install PWA banner -->
+  <div class="install-banner" id="install-banner">
+    <div class="install-text">Install Auradrop as an app — works offline, syncs when back online.</div>
+    <button class="btn btn-green btn-sm" onclick="installPWA()">Install</button>
+    <button class="btn btn-sm" onclick="dismissInstall()">✕</button>
+  </div>
+
+  <!-- Offline queue banner -->
+  <div class="queue-banner" id="queue-banner">
+    <div class="queue-top">
+      <div class="queue-title">⏱ Queued for upload when online</div>
+      <button class="btn btn-sm" onclick="syncQueue()" id="sync-btn" style="display:none">Sync now</button>
+    </div>
+    <div class="queue-list" id="queue-list"></div>
+  </div>
+
+  <!-- API Key -->
+  <div class="setup-card">
+    <div class="setup-label">Anthropic API Key</div>
+    <div class="setup-row">
+      <input type="password" id="api-key" placeholder="sk-ant-…" autocomplete="off">
+      <button class="btn btn-green" onclick="saveKey()">Save</button>
+    </div>
+    <div class="status-line" id="key-status"></div>
+  </div>
+
+  <!-- Google Drive -->
+  <div class="setup-card">
+    <div class="setup-label">Google Drive</div>
+    <div class="drive-btn">
+      <button class="btn" id="drive-btn" onclick="connectDrive()">Connect Google Drive</button>
+      <span class="drive-connected" id="drive-status"></span>
+    </div>
+    <div class="status-line" id="drive-status-line"></div>
+  </div>
+
+  <!-- Drop zone -->
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="file-input" multiple>
+    <div class="drop-circle">↓</div>
+    <div class="drop-title">Drop anything here</div>
+    <div class="drop-sub">audio · pdf · image · text · anything</div>
+  </div>
+
+  <!-- Analysis panel -->
+  <div id="panel-area"></div>
+
+  <!-- History -->
+  <div id="history-area"></div>
+
+</div>
+
+<script>
+// ─── Config ───────────────────────────────────────────────
+const CLIENT_ID = '237030157443-buaadhckriqqnm61s29jsbsns9mdnhto.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+// ─── State ────────────────────────────────────────────────
+let apiKey = localStorage.getItem('auradrop_key') || '';
+let driveToken = null;
+let offlineQueue = JSON.parse(localStorage.getItem('auradrop_queue') || '[]');
+let history = JSON.parse(localStorage.getItem('auradrop_history') || '[]');
+let currentFile = null;
+let currentAnalysis = null;
+let deferredInstall = null;
+
+// ─── Device detection ─────────────────────────────────────
+function getDeviceName() {
+  const ua = navigator.userAgent;
+  const saved = localStorage.getItem('auradrop_device');
+  if (saved) return saved;
+  let name = 'Unknown device';
+  if (/iPhone/.test(ua)) name = 'iPhone';
+  else if (/iPad/.test(ua)) name = 'iPad';
+  else if (/Android.*Mobile/.test(ua)) name = 'Android phone';
+  else if (/Android/.test(ua)) name = 'Android tablet';
+  else if (/Mac/.test(ua)) name = 'Mac';
+  else if (/Windows/.test(ua)) name = 'Windows PC';
+  else if (/Linux/.test(ua)) name = 'Linux';
+  localStorage.setItem('auradrop_device', name);
+  return name;
+}
+
+const DEVICE = getDeviceName();
+document.getElementById('device-pill').textContent = DEVICE;
+
+// ─── Online / offline ─────────────────────────────────────
+function updateOnlineStatus() {
+  const dot = document.getElementById('online-dot');
+  const syncBtn = document.getElementById('sync-btn');
+  if (navigator.onLine) {
+    dot.classList.remove('offline');
+    syncBtn.style.display = offlineQueue.length ? 'block' : 'none';
+    if (offlineQueue.length) syncQueue();
+  } else {
+    dot.classList.add('offline');
+    syncBtn.style.display = 'none';
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// ─── PWA install ──────────────────────────────────────────
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstall = e;
+  if (!localStorage.getItem('auradrop_installed')) {
+    document.getElementById('install-banner').classList.add('visible');
+  }
+});
+
+function installPWA() {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  deferredInstall.userChoice.then(r => {
+    if (r.outcome === 'accepted') {
+      localStorage.setItem('auradrop_installed', '1');
+      document.getElementById('install-banner').classList.remove('visible');
+    }
+    deferredInstall = null;
+  });
+}
+function dismissInstall() {
+  document.getElementById('install-banner').classList.remove('visible');
+}
+
+// Service worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/auradrop/sw.js').then(reg => {
+    console.log('SW registered');
+    // Listen for sync messages
+    navigator.serviceWorker.addEventListener('message', e => {
+      if (e.data?.type === 'sync-now') syncQueue();
+    });
+    // Register background sync
+    if ('sync' in reg) {
+      reg.sync.register('auradrop-sync').catch(() => {});
+    }
+  });
+}
+
+// ─── API Key ──────────────────────────────────────────────
+if (apiKey) {
+  document.getElementById('api-key').value = apiKey;
+  setStatus('key-status', '✓ key saved', 'ok');
+}
+
+function saveKey() {
+  const val = document.getElementById('api-key').value.trim();
+  if (!val.startsWith('sk-ant-')) { setStatus('key-status', '⚠ should start with sk-ant-', 'err'); return; }
+  apiKey = val;
+  localStorage.setItem('auradrop_key', val);
+  setStatus('key-status', '✓ saved to this device', 'ok');
+}
+
+// ─── Google Drive OAuth ───────────────────────────────────
+function connectDrive() {
+  const params = new URLSearchParams({
+    client_id: CLIENT_ID,
+    redirect_uri: window.location.origin + window.location.pathname,
+    response_type: 'token',
+    scope: SCOPES,
+    include_granted_scopes: 'true',
+    state: 'drive_auth'
+  });
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+// Handle OAuth redirect back
+function checkOAuthCallback() {
+  const hash = window.location.hash;
+  if (!hash.includes('access_token')) return;
+  const params = new URLSearchParams(hash.slice(1));
+  const token = params.get('access_token');
+  const expires = parseInt(params.get('expires_in') || '3600');
+  if (token) {
+    driveToken = token;
+    const expiry = Date.now() + (expires * 1000);
+    sessionStorage.setItem('auradrop_drive_token', token);
+    sessionStorage.setItem('auradrop_drive_expiry', expiry.toString());
+    window.history.replaceState({}, document.title, window.location.pathname);
+    updateDriveUI(true);
+    // Try to sync queue now that we have a token
+    if (offlineQueue.length) syncQueue();
+  }
+}
+
+function loadDriveToken() {
+  const token = sessionStorage.getItem('auradrop_drive_token');
+  const expiry = parseInt(sessionStorage.getItem('auradrop_drive_expiry') || '0');
+  if (token && Date.now() < expiry - 60000) {
+    driveToken = token;
+    return true;
+  }
+  return false;
+}
+
+function updateDriveUI(connected) {
+  const btn = document.getElementById('drive-btn');
+  const status = document.getElementById('drive-status');
+  if (connected) {
+    btn.textContent = 'Reconnect Drive';
+    status.textContent = '✓ connected';
+    setStatus('drive-status-line', 'Files will go to Auradrop/ in your Google Drive', 'ok');
+  } else {
+    btn.textContent = 'Connect Google Drive';
+    status.textContent = '';
+    setStatus('drive-status-line', 'Connect to enable automatic filing (files queue offline if not connected)', 'warn');
+  }
+}
+
+// ─── Drop zone ────────────────────────────────────────────
+const dz = document.getElementById('dropzone');
+const fi = document.getElementById('file-input');
+
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const files = [...e.dataTransfer.files];
+  if (files.length) processFile(files[0]);
+});
+fi.addEventListener('change', () => {
+  if (fi.files.length) processFile(fi.files[0]);
+  fi.value = '';
+});
+
+// ─── File helpers ─────────────────────────────────────────
+function fileEmoji(file) {
+  const n = file.name.toLowerCase();
+  if (file.type.startsWith('audio/') || n.match(/\.(wav|mp3|aiff|flac|ogg|m4a|aac)$/)) return '🎵';
+  if (file.type.startsWith('image/')) return '🖼';
+  if (file.type === 'application/pdf') return '📄';
+  if (file.type.startsWith('video/')) return '🎬';
+  if (n.match(/\.(md|txt|json|csv|rtf)$/)) return '📝';
+  if (n.match(/\.(zip|rar|7z)$/)) return '📦';
+  return '📎';
+}
+
+function formatSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function setStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'status-line ' + (type || '');
+}
+
+// ─── Process file ─────────────────────────────────────────
+async function processFile(file) {
+  if (!apiKey) { setStatus('key-status', '⚠ Enter your API key first', 'err'); return; }
+  currentFile = file;
+  currentAnalysis = null;
+  showPanel(file, 'thinking');
+
+  try {
+    const analysis = await analyseFile(file);
+    currentAnalysis = analysis;
+    showPanel(file, 'done', analysis);
+  } catch(err) {
+    showPanel(file, 'error', { error: err.message });
+  }
+}
+
+async function analyseFile(file) {
+  let contentNote = '';
+  if ((file.type.startsWith('text/') || file.name.match(/\.(md|txt|json|csv)$/i)) && file.size < 80000) {
+    const text = await file.text();
+    contentNote = `\n\nFile contents:\n${text.slice(0, 4000)}`;
+  }
+
+  let imageContent = null;
+  if (file.type.startsWith('image/') && file.size < 5 * 1024 * 1024) {
+    imageContent = await toBase64(file);
+  }
+
+  const system = `You are Auradrop — the personal filing brain for Imogen Heap, musician and technologist.
+
+Imogen's world: music production (Ableton, Max for Live), songwriting (unfinished song WHYDTM — "What Have You Done To Me"), Auracles.io (music identity/rights platform), Mi.Mu Gloves, Endlesss (collaborative music app, always 3 s's), AI music tech, sustainability, community living, daughter Scout (age 11), Pilates, Tai Chi, inspiration-collecting.
+
+Return ONLY valid JSON, no markdown, no preamble:
+{
+  "category": "Music | Technology | Inspiration | Research | Personal | Creative | Admin | Wellness",
+  "fileType": "plain English — what is this file",
+  "folder": "subfolder inside Auradrop e.g. Music/WHYDTM or Inspiration/Instagram or Research/AI-tools",
+  "tags": ["5 to 8 tags"],
+  "summary": "2–3 sentences. What is it, why might Imogen have saved it, what's useful.",
+  "mood": "one word — only for audio/image/creative",
+  "language": "only if text content"
+}`;
+
+  const userContent = imageContent
+    ? [
+        { type: 'image', source: { type: 'base64', media_type: file.type, data: imageContent } },
+        { type: 'text', text: `Analyse this file.\nFilename: ${file.name}\nSize: ${formatSize(file.size)}\nUploaded from: ${DEVICE}\n\nWhat is it? Where should it live in Imogen's Auradrop?` }
+      ]
+    : `Analyse this file.\nFilename: ${file.name}\nType: ${file.type || 'unknown'}\nSize: ${formatSize(file.size)}\nUploaded from: ${DEVICE}${contentNote}\n\nWhat is it? Where should it live in Imogen's Auradrop?`;
+
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-calls': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-4-5',
+      max_tokens: 1000,
+      system,
+      messages: [{ role: 'user', content: userContent }]
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'API error ' + res.status);
+  }
+
+  const data = await res.json();
+  const raw = data.content?.[0]?.text || '';
+  return JSON.parse(raw.replace(/```json|```/g, '').trim());
+}
+
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+// ─── UI ───────────────────────────────────────────────────
+function showPanel(file, state, data) {
+  const area = document.getElementById('panel-area');
+  let body = '';
+
+  if (state === 'thinking') {
+    body = `<div class="thinking"><div class="dot-pulse"><span></span><span></span><span></span></div>Claude is reading this…</div>`;
+  } else if (state === 'done') {
+    const a = data;
+    body = `
+      <div class="meta-row">
+        <div class="meta-cell"><div class="meta-label">Category</div><div class="meta-value">${a.category}</div></div>
+        <div class="meta-cell"><div class="meta-label">Type</div><div class="meta-value">${a.fileType}</div></div>
+        ${a.mood ? `<div class="meta-cell"><div class="meta-label">Mood</div><div class="meta-value">${a.mood}</div></div>` : ''}
+        ${a.language ? `<div class="meta-cell"><div class="meta-label">Language</div><div class="meta-value">${a.language}</div></div>` : ''}
+      </div>
+      <div class="tags">${(a.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      <div class="folder-path"><span class="folder-icon">▸</span> Auradrop / ${a.folder}</div>
+      <div class="summary">${a.summary}</div>
+      <div class="action-row">
+        <button class="btn btn-green" onclick="fileToDrive()">Save to Drive</button>
+        <button class="btn" onclick="queueForLater()">Queue for later</button>
+        <button class="btn" onclick="clearPanel()">Discard</button>
+      </div>`;
+  } else if (state === 'uploading') {
+    body = `<div class="thinking"><div class="dot-pulse"><span></span><span></span><span></span></div>Filing to Google Drive…</div>`;
+  } else if (state === 'queued') {
+    body = `<div class="success-msg"><div class="success-check">⏱</div>Queued — will file to <strong style="color:var(--text);margin:0 4px">Auradrop / ${data.folder}</strong> when online</div>
+    <div class="action-row" style="margin-top:10px"><button class="btn" onclick="clearPanel()">Drop another</button></div>`;
+  } else if (state === 'saved') {
+    body = `<div class="success-msg"><div class="success-check">✓</div>Filed to <strong style="color:var(--text);margin:0 4px">Auradrop / ${data.folder}</strong></div>
+    <div class="action-row" style="margin-top:10px">
+      <button class="btn" onclick="clearPanel()">Drop another</button>
+      ${data.link ? `<a href="${data.link}" target="_blank" class="btn">Open in Drive ↗</a>` : ''}
+    </div>`;
+  } else if (state === 'error') {
+    body = `<div class="error-box">⚠ ${data.error}</div>
+    <div class="action-row" style="margin-top:10px"><button class="btn" onclick="clearPanel()">Try again</button></div>`;
+  }
+
+  area.innerHTML = `
+    <div class="analysis-card">
+      <div class="card-header">
+        <div class="file-icon">${fileEmoji(file)}</div>
+        <div class="file-info">
+          <div class="file-name">${file.name}</div>
+          <div class="file-meta">${formatSize(file.size)} · ${DEVICE}</div>
+        </div>
+      </div>
+      <div class="card-body">${body}</div>
+    </div>`;
+}
+
+function clearPanel() {
+  document.getElementById('panel-area').innerHTML = '';
+  currentFile = null; currentAnalysis = null;
+}
+
+// ─── Queue for later ─────────────────────────────────────
+function queueForLater() {
+  if (!currentFile || !currentAnalysis) return;
+  addToQueue(currentFile, currentAnalysis);
+  showPanel(currentFile, 'queued', currentAnalysis);
+}
+
+function addToQueue(file, analysis) {
+  const entry = {
+    id: Date.now(),
+    name: file.name,
+    size: formatSize(file.size),
+    folder: analysis.folder,
+    category: analysis.category,
+    tags: analysis.tags,
+    summary: analysis.summary,
+    device: DEVICE,
+    queuedAt: new Date().toISOString(),
+    // Store file as base64 for offline persistence
+    fileData: null,
+    fileType: file.type
+  };
+
+  // Read file into base64 for local storage (small files only)
+  if (file.size < 10 * 1024 * 1024) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      entry.fileData = reader.result;
+      offlineQueue.push(entry);
+      persistQueue();
+      renderQueue();
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // Large files: queue metadata only, user will need to re-drop when online
+    entry.largeFile = true;
+    offlineQueue.push(entry);
+    persistQueue();
+    renderQueue();
+  }
+}
+
+function persistQueue() {
+  try {
+    localStorage.setItem('auradrop_queue', JSON.stringify(offlineQueue));
+  } catch(e) {
+    // Storage full — trim old entries
+    offlineQueue = offlineQueue.slice(-10);
+    localStorage.setItem('auradrop_queue', JSON.stringify(offlineQueue));
+  }
+}
+
+function renderQueue() {
+  const banner = document.getElementById('queue-banner');
+  const list = document.getElementById('queue-list');
+  const syncBtn = document.getElementById('sync-btn');
+
+  if (!offlineQueue.length) {
+    banner.classList.remove('visible');
+    return;
+  }
+
+  banner.classList.add('visible');
+  syncBtn.style.display = navigator.onLine && driveToken ? 'block' : 'none';
+
+  list.innerHTML = offlineQueue.map(e => `
+    <div class="queue-item">
+      <div class="queue-dot"></div>
+      <span>${e.name}</span>
+      <span style="color:var(--text3)">▸ Auradrop / ${e.folder}</span>
+      <span style="color:var(--text3);margin-left:auto">${e.device}</span>
+    </div>`).join('');
+}
+
+// ─── Drive filing ─────────────────────────────────────────
+async function fileToDrive() {
+  if (!currentFile || !currentAnalysis) return;
+
+  if (!driveToken) {
+    // No token — offer to queue
+    const queue = confirm('Not connected to Google Drive. Queue this file to upload when connected?');
+    if (queue) queueForLater();
+    return;
+  }
+
+  if (!navigator.onLine) {
+    queueForLater();
+    return;
+  }
+
+  showPanel(currentFile, 'uploading');
+
+  try {
+    const folderId = await ensureFolder('Auradrop/' + currentAnalysis.folder);
+    const fileId = await uploadFile(currentFile, folderId);
+    const link = `https://drive.google.com/file/d/${fileId}/view`;
+
+    addToHistory({
+      name: currentFile.name,
+      size: formatSize(currentFile.size),
+      folder: currentAnalysis.folder,
+      category: currentAnalysis.category,
+      device: DEVICE,
+      link,
+      date: new Date().toLocaleDateString('en-GB'),
+      status: 'filed'
+    });
+
+    showPanel(currentFile, 'saved', { folder: currentAnalysis.folder, link });
+  } catch(err) {
+    if (err.message.includes('401') || err.message.includes('invalid')) {
+      driveToken = null;
+      sessionStorage.removeItem('auradrop_drive_token');
+      updateDriveUI(false);
+      const queue = confirm('Drive session expired. Queue for later?');
+      if (queue) queueForLater();
+    } else {
+      showPanel(currentFile, 'error', { error: err.message });
+    }
+  }
+}
+
+async function syncQueue() {
+  if (!driveToken || !navigator.onLine || !offlineQueue.length) return;
+
+  const toSync = offlineQueue.filter(e => !e.largeFile && e.fileData);
+  for (const entry of toSync) {
+    try {
+      const folderId = await ensureFolder('Auradrop/' + entry.folder);
+
+      // Convert base64 back to blob
+      const res = await fetch(entry.fileData);
+      const blob = await res.blob();
+      const file = new File([blob], entry.name, { type: entry.fileType });
+
+      const fileId = await uploadFile(file, folderId);
+      const link = `https://drive.google.com/file/d/${fileId}/view`;
+
+      // Remove from queue
+      offlineQueue = offlineQueue.filter(e => e.id !== entry.id);
+      persistQueue();
+
+      addToHistory({
+        name: entry.name,
+        size: entry.size,
+        folder: entry.folder,
+        category: entry.category,
+        device: entry.device,
+        link,
+        date: new Date().toLocaleDateString('en-GB'),
+        status: 'filed'
+      });
+    } catch(err) {
+      console.warn('Sync failed for', entry.name, err);
+    }
+  }
+
+  renderQueue();
+  renderHistory();
+}
+
+// ─── Drive API ────────────────────────────────────────────
+async function ensureFolder(path) {
+  const parts = path.split('/').filter(Boolean);
+  let parentId = 'root';
+  for (const part of parts) {
+    parentId = await getOrCreateFolder(part, parentId);
+  }
+  return parentId;
+}
+
+async function getOrCreateFolder(name, parentId) {
+  const q = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
+  const search = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}&fields=files(id)`,
+    { headers: { Authorization: 'Bearer ' + driveToken } }
+  );
+  if (!search.ok) throw new Error('Drive API error ' + search.status);
+  const data = await search.json();
+  if (data.files?.length) return data.files[0].id;
+
+  const create = await fetch('https://www.googleapis.com/drive/v3/files', {
+    method: 'POST',
+    headers: { Authorization: 'Bearer ' + driveToken, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
+  });
+  const folder = await create.json();
+  return folder.id;
+}
+
+async function uploadFile(file, folderId) {
+  const meta = { name: file.name, parents: [folderId] };
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  form.append('file', file);
+
+  const res = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id',
+    { method: 'POST', headers: { Authorization: 'Bearer ' + driveToken }, body: form }
+  );
+  if (!res.ok) throw new Error('Upload error ' + res.status);
+  const data = await res.json();
+  return data.id;
+}
+
+// ─── History ──────────────────────────────────────────────
+function addToHistory(record) {
+  history.unshift(record);
+  if (history.length > 100) history = history.slice(0, 100);
+  localStorage.setItem('auradrop_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!history.length) return;
+  document.getElementById('history-area').innerHTML = `
+    <div class="section-heading" style="margin-top:1.5rem">Recently filed</div>
+    <div class="history-list">
+      ${history.slice(0,15).map(h => `
+        <div class="history-item">
+          <div class="hi-body">
+            <div class="hi-name">${h.name}</div>
+            <div class="hi-sub">▸ Auradrop / ${h.folder} · ${h.date} · ${h.device}</div>
+          </div>
+          <div class="hi-action">
+            ${h.link
+              ? `<a href="${h.link}" target="_blank" class="hi-filed">open ↗</a>`
+              : `<span class="hi-filed">✓ filed</span>`
+            }
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ─── Init ─────────────────────────────────────────────────
+checkOAuthCallback();
+if (loadDriveToken()) {
+  updateDriveUI(true);
+} else {
+  updateDriveUI(false);
+}
+
+if (apiKey) {
+  document.getElementById('api-key').value = apiKey;
+  setStatus('key-status', '✓ key saved', 'ok');
+}
+
+renderQueue();
+renderHistory();
+</script>
+</body>
+</html>
