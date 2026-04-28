@@ -663,7 +663,7 @@ Return ONLY valid JSON, no markdown, no preamble:
       ]
     : `Analyse this file.\nFilename: ${file.name}\nType: ${file.type || 'unknown'}\nSize: ${formatSize(file.size)}\nUploaded from: ${DEVICE}${contentNote}\n\nWhat is it? Where should it live in Imogen's Auradrop?`;
 
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch('https://auradrop-proxy.imogen.workers.dev', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
